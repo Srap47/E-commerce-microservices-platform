@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  # Product Ranking Service
+  product-service:
+    build:
+      context: ./services/product-service
+      dockerfile: Dockerfile
+    container_name: product-service
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Cart Service (JWT Protected)
+  cart-service:
+    build:
+      context: ./services/cart-service
+      dockerfile: Dockerfile
+    container_name: cart-service
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Authentication Service
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "8003:8003"
+    environment:
+      - PORT=8003
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+      - JWT_EXPIRATION_HOURS=24
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # API Gateway (Single Entry Point)
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - PRODUCT_SERVICE_URL=http://product-service:8001
+      - CART_SERVICE_URL=http://cart-service:8002
+      - AUTH_SERVICE_URL=http://auth-service:8003
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-in-production}
+    depends_on:
+      - product-service
+      - cart-service
+      - auth-service
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Frontend (React SPA)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    depends_on:
+      - api-gateway
+    networks:
+      - ecommerce-network
+    restart: unless-stopped
+
+networks:
+  ecommerce-network:
+    driver: bridge
+    name: ecommerce-network
+
+# Optional: Add volumes for development
+# volumes:
+#   product-service-data:
+#   cart-service-data:

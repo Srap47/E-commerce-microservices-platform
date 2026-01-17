@@ -1,54 +1,112 @@
-import React, { useState } from 'react';
-import { cartService } from '../services/api';
-
-const ProductCard = ({ product }) => {
-  const [addingToCart, setAddingToCart] = useState(false);
-
-  const handleAddToCart = async () => {
-    try {
-      setAddingToCart(true);
-      const userId = localStorage.getItem('userId') || 'guest';
-      await cartService.addItem(userId, {
-        product_id: product.id,
-        quantity: 1,
-        price: product.price,
-      });
-      alert(`${product.name} added to cart!`);
-    } catch (error) {
-      console.error('Failed to add to cart:', error);
-      alert('Failed to add to cart');
-    } finally {
-      setAddingToCart(false);
-    }
+/**
+ * Product Card Component
+ * Displays individual product with ranking information
+ */
+function ProductCard({ product, onAddToCart, isAddingToCart }) {
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(price);
   };
+
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<span key={`full-${i}`} className="star filled">★</span>);
+    }
+    if (hasHalfStar) {
+      stars.push(<span key="half" className="star half">★</span>);
+    }
+    const emptyStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(<span key={`empty-${i}`} className="star">★</span>);
+    }
+    return stars;
+  };
+
+  const getStockStatus = (stock) => {
+    if (stock === 0) return { text: 'Out of Stock', class: 'out-of-stock' };
+    if (stock < 5) return { text: 'Low Stock', class: 'low-stock' };
+    return { text: 'In Stock', class: 'in-stock' };
+  };
+
+  const stockStatus = getStockStatus(product.stock);
 
   return (
     <div className="product-card">
-      <img src={`/images/product-${product.id}.jpg`} alt={product.name} className="product-image" />
-      <div className="product-info">
-        <h3>{product.name}</h3>
-        <p className="description">{product.description}</p>
-        <div className="price-rating">
-          <span className="price">${product.price.toFixed(2)}</span>
-          <span className="rating">⭐ {product.rating}/5 ({product.reviews_count} reviews)</span>
+      {product.rank && (
+        <div className="rank-badge">#{product.rank}</div>
+      )}
+
+      <div className="product-image">
+        <img
+          src={product.image_url || 'https://via.placeholder.com/300x200?text=No+Image'}
+          alt={product.name}
+          loading="lazy"
+        />
+      </div>
+
+      <div className="product-details">
+        <div className="product-category">{product.category}</div>
+        <h3 className="product-name">{product.name}</h3>
+        
+        {product.description && (
+          <p className="product-description">{product.description}</p>
+        )}
+
+        <div className="product-rating">
+          <div className="stars">
+            {renderStars(product.rating)}
+          </div>
+          <span className="rating-value">
+            {product.rating.toFixed(1)} ({product.sales_count} sales)
+          </span>
         </div>
-        <div className="stock-status">
-          {product.stock > 0 ? (
-            <span className="in-stock">In Stock ({product.stock})</span>
-          ) : (
-            <span className="out-of-stock">Out of Stock</span>
+
+        <div className="product-metrics">
+          <div className="metric">
+            <span className="metric-label">Popularity</span>
+            <span className="metric-value">{product.popularity}/100</span>
+          </div>
+          {product.ranking_score && (
+            <div className="metric">
+              <span className="metric-label">Rank Score</span>
+              <span className="metric-value">{product.ranking_score.toFixed(1)}</span>
+            </div>
           )}
         </div>
-        <button
-          className="add-to-cart-btn"
-          onClick={handleAddToCart}
-          disabled={addingToCart || product.stock === 0}
-        >
-          {addingToCart ? 'Adding...' : 'Add to Cart'}
-        </button>
+
+        <div className="product-footer">
+          <div className="price-stock">
+            <div className="product-price">{formatPrice(product.price)}</div>
+            <div className={`stock-status ${stockStatus.class}`}>
+              {stockStatus.text} ({product.stock})
+            </div>
+          </div>
+
+          <button
+            className="add-to-cart-btn"
+            onClick={() => onAddToCart(product)}
+            disabled={product.stock === 0 || isAddingToCart}
+          >
+            {isAddingToCart ? (
+              <>
+                <span className="spinner-small"></span> Adding...
+              </>
+            ) : product.stock === 0 ? (
+              'Out of Stock'
+            ) : (
+              '🛒 Add to Cart'
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
-};
+}
 
 export default ProductCard;

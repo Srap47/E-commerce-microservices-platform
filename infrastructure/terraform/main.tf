@@ -1,4 +1,5 @@
 terraform {
+  required_version = ">= 1.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -8,21 +9,8 @@ terraform {
 }
 
 provider "aws" {
-  region = var.region
+  region = var.aws_region
 }
 
-# VPC
-resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
-}
-
-# Subnets
-resource "aws_subnet" "public" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.0.1.0/24"
-}
-
-# ECS Cluster
-resource "aws_ecs_cluster" "main" {
-  name = "ecommerce-cluster"
-}
+# Lambda functions, API Gateway, IAM roles, etc.
+# (Full configuration provided separately)

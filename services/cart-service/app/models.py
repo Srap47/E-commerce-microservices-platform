@@ -1,33 +1,66 @@
-from pydantic import BaseModel
-from typing import List, Optional
+"""
+Data models for Cart Service
+"""
+from pydantic import BaseModel, Field
+from typing import List
+
 
 class CartItem(BaseModel):
-    product_id: int
-    quantity: int
-    price: float
+    """Individual item in shopping cart"""
+    product_id: str
+    product_name: str
+    price: float = Field(gt=0)
+    quantity: int = Field(gt=0)
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "product_id": "prod_001",
+                "product_name": "Wireless Headphones",
+                "price": 199.99,
+                "quantity": 2
+            }
+        }
 
-class Cart(BaseModel):
-    user_id: str
-    items: List[CartItem] = []
-    total_price: float = 0.0
-
-class AddToCartRequest(BaseModel):
-    product_id: int
-    quantity: int
-    price: float
-
-class RemoveFromCartRequest(BaseModel):
-    product_id: int
-
-class UpdateCartItemRequest(BaseModel):
-    product_id: int
-    quantity: int
 
 class CartResponse(BaseModel):
+    """Complete cart response"""
     user_id: str
     items: List[CartItem]
+    total_items: int
     total_price: float
-    item_count: int
-
+    
     class Config:
-        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "user_id": "user123",
+                "items": [
+                    {
+                        "product_id": "prod_001",
+                        "product_name": "Wireless Headphones",
+                        "price": 199.99,
+                        "quantity": 2
+                    }
+                ],
+                "total_items": 2,
+                "total_price": 399.98
+            }
+        }
+
+
+class AddToCartRequest(BaseModel):
+    """Request to add item to cart"""
+    product_id: str
+    product_name: str
+    price: float = Field(gt=0)
+    quantity: int = Field(default=1, gt=0)
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "product_id": "prod_001",
+                "product_name": "Wireless Headphones",
+                "price": 199.99,
+                "quantity": 1
+            }
+        }
