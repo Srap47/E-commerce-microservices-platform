@@ -1,0 +1,8 @@
+This is a placeholder for the architecture diagram image.
+In a real project, this would be replaced with an actual PNG file.
+The diagram should show:
+- Frontend communicating with API Gateway
+- API Gateway routing to microservices
+- Product, Cart, and Auth services
+- Databases for each service
+- Message queue/event bus (optional)
