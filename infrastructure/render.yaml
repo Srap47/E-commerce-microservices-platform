@@ -1,0 +1,60 @@
+services:
+  # Product Service
+  - type: web
+    name: product-service
+    env: python
+    buildCommand: "cd services/product-service && pip install -r requirements.txt"
+    startCommand: "cd services/product-service && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PORT
+        value: 8001
+
+  # Cart Service
+  - type: web
+    name: cart-service
+    env: python
+    buildCommand: "cd services/cart-service && pip install -r requirements.txt"
+    startCommand: "cd services/cart-service && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 8002
+
+  # Auth Service
+  - type: web
+    name: auth-service
+    env: python
+    buildCommand: "cd services/auth-service && pip install -r requirements.txt"
+    startCommand: "cd services/auth-service && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 8003
+
+  # API Gateway
+  - type: web
+    name: api-gateway
+    env: python
+    buildCommand: "cd api-gateway && pip install -r requirements.txt"
+    startCommand: "cd api-gateway && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PRODUCT_SERVICE_URL
+        value: https://product-service.onrender.com
+      - key: CART_SERVICE_URL
+        value: https://cart-service.onrender.com
+      - key: AUTH_SERVICE_URL
+        value: https://auth-service.onrender.com
+      - key: JWT_SECRET
+        sync: false
+
+  # Frontend
+  - type: web
+    name: frontend
+    env: node
+    buildCommand: "cd frontend && npm install && npm run build"
+    startCommand: "cd frontend && npm run preview"
+    envVars:
+      - key: VITE_API_URL
+        value: https://api-gateway.onrender.com
